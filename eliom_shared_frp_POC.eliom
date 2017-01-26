@@ -7,7 +7,6 @@ open Html.D
 open FRP.Types
 ]
 
-
 [%%shared
 
 type row_model  = { v : int; row_valid : bool }
@@ -73,26 +72,11 @@ type test_action =
   (* [@@deriving show] *)
 ]
 
-[%%client
-let tag_row_port id (push : test_action FRP.Types.port) : row_action FRP.Types.port =
-  let P (ev, push) = push in
-
-  let push ?step (a, e) = match a with
-    | None -> push (None, e)
-    | Some a -> push (Some (Row_action (id, a)), e)
-  in
-    P (ev, push)
-]
-
-[%%server
-let tag_row_port id (p : test_action FRP.Types.port) : row_action FRP.Types.port =
-  P [%client (React.E.create ())]
-]
-
 [%%shared
 
 let mk_row_view port =
-  [%shared fun id row -> ROW.view (tag_row_port id ~%port) row]
+  [%shared fun id row ->
+    ROW.view (FRP.tag_port (fun a -> Row_action (id, a)) ~%port) row]
 
 module TEST =
 struct
@@ -234,6 +218,6 @@ let () =
         let ev    = [%client (React.E.create () : test_action FRP.Types.action_event)] in
           ignore [%client ( FRP.run (*~pp_action:show_test_action *)
                               TEST.update (~%m, ~%pm) ~%ev : unit) ];
-          TEST.view (P ev) m
+          TEST.view (FRP.port ev) m
       ]
     ])

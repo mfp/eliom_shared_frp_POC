@@ -20,7 +20,24 @@ include Types
 let shared_eq () = [%shared (==)]
 ]
 
+[%%server
+let port x : _ port = P x
+
+let tag_port (f : 'a -> 'b) (_ : 'b port) : 'a port =
+  P [%client (React.E.create ())]
+]
+
 [%%client
+
+let tag_port (f : 'a -> 'b) (push : 'b port) : 'a port =
+  let P (ev, push) = push in
+
+  let push ?step (a, e) = match a with
+    | None -> push (None, e)
+    | Some a -> push (Some (f a), e)
+  in
+    P (ev, push)
+
 let run ?pp_action update (m, (pm : ?step:React.step -> 'a -> unit)) (ev, _) : unit =
   ignore @@
     Eliom_shared.React.E.map
