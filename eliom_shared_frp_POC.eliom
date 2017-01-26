@@ -1,5 +1,5 @@
 [%%shared
-
+open Printf
 open Eliom_lib
 
 module S = Eliom_shared.React.S
@@ -34,8 +34,7 @@ struct
     let open Eliom_content.Html.D in
     let inp =
       Raw.input
-        ~a:[ R.a_value @@
-               S.map [%shared fun m -> string_of_int m.v] m;
+        ~a:[ R.a_value @@ S.map [%shared fun m -> string_of_int m.v] m;
              R.a_style @@
                S.map
                  [%shared
@@ -127,8 +126,7 @@ struct
 
     let input_b =
       Raw.input
-        ~a:[ R.a_value @@ S.map [%shared (fun m -> string_of_int @@ 2 * m.a)] m ]
-        () in
+        ~a:[ R.a_value @@ S.map [%shared (fun m -> sprintf "(%d)" m.a)] m ] () in
 
     let rows =
       R.div @@
@@ -146,8 +144,7 @@ struct
           input_a; br ();
           input_b; br ();
 
-          R.pcdata @@
-            S.map [%shared (fun m -> Printf.sprintf "value: %d" m.a)] m;
+          R.pcdata @@ S.map [%shared (fun m -> sprintf "value: %d" m.a)] m;
 
           br ();
 
@@ -157,13 +154,11 @@ struct
           br ();
 
           button
-            ~a:[a_onclick
-                  [%client FRP.effect ~%port @@ FRP.focus ~%input_a]]
+            ~a:[a_onclick [%client FRP.effect ~%port @@ FRP.focus ~%input_a]]
             [ pcdata "Focus A" ];
           pcdata " ";
           button
-            ~a:[a_onclick
-                  [%client FRP.effect ~%port @@ FRP.focus ~%input_b]]
+            ~a:[a_onclick [%client FRP.effect ~%port @@ FRP.focus ~%input_b]]
             [ pcdata "Focus B" ];
 
           br();
@@ -173,8 +168,7 @@ struct
           pcdata "SUM: ";
           R.pcdata @@
             S.map [%shared string_of_int] @@
-            S.map
-              [%shared fun m -> IM.fold (fun _ { v; _ } s -> v + s) m.rows 0] m;
+            S.map [%shared fun m -> IM.fold (fun _ { v; _ } s -> v + s) m.rows 0] m;
 
           hr ();
 
