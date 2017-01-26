@@ -1,13 +1,9 @@
 [%%shared
 
 open Eliom_lib
-open Eliom_content
-open Html.D
-
-open FRP.Types
 
 module S = Eliom_shared.React.S
-module R = Html.R
+module R = Eliom_content.Html.R
 ]
 
 [%%shared
@@ -35,6 +31,7 @@ struct
       end
 
   let view (port : row_action FRP.Types.port) m =
+    let open Eliom_content.Html.D in
     let inp =
       Raw.input
         ~a:[ R.a_value @@
@@ -111,6 +108,7 @@ struct
       end
 
   let view (port : test_action FRP.Types.port) m =
+    let open Eliom_content.Html.D in
     let input_a =
       Raw.input
         ~a:[ R.a_value @@ S.map [%shared (fun m -> string_of_int m.a)] m;
@@ -203,7 +201,7 @@ let () =
   Eliom_tools.F.html
     ~title:"eliom_shared_frp_POC"
     ~css:[["css";"eliom_shared_frp_POC.css"]]
-    Html.F.(body [
+    Eliom_content.Html.F.(body [
       h1 [pcdata "Welcome from Eliom's distillery!"];
       div [
         let m, pm = (S.create @@ TEST.make 42) in
