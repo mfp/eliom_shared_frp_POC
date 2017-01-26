@@ -113,8 +113,7 @@ struct
   let view (port : test_action FRP.Types.port) m =
     let input_a =
       Raw.input
-        ~a:[ R.a_value @@
-               S.map [%shared (fun m -> string_of_int m.a)] m;
+        ~a:[ R.a_value @@ S.map [%shared (fun m -> string_of_int m.a)] m;
              R.a_style @@
                S.map
                  [%shared
@@ -130,10 +129,7 @@ struct
 
     let input_b =
       Raw.input
-        ~a:[ R.a_value @@
-             S.map
-               [%shared (fun m -> string_of_int @@ 2 * m.a)] m
-        ]
+        ~a:[ R.a_value @@ S.map [%shared (fun m -> string_of_int @@ 2 * m.a)] m ]
         () in
 
     let rows =
@@ -157,13 +153,9 @@ struct
 
           br ();
 
-          button
-            ~a:[a_onclick [%client FRP.push ~%port Decrement]]
-            [ pcdata "- " ];
+          button ~a:[FRP.onclick port Decrement] [ pcdata "- " ];
           pcdata " ";
-          button
-            ~a:[a_onclick [%client FRP.push ~%port Increment]]
-            [ pcdata "+ " ];
+          button ~a:[FRP.onclick port Increment] [ pcdata "+ " ];
           br ();
 
           button
@@ -178,8 +170,7 @@ struct
 
           br();
 
-          button ~a:[a_onclick [%client FRP.push ~%port Add_row]]
-            [ pcdata "ADD ROW" ];
+          button ~a:[FRP.onclick port Add_row] [ pcdata "ADD ROW" ];
           pcdata " ";
           pcdata "SUM: ";
           R.pcdata @@

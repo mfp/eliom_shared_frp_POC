@@ -20,13 +20,6 @@ include Types
 let shared_eq () = [%shared (==)]
 ]
 
-[%%server
-let port x : _ port = P x
-
-let tag_port (f : 'a -> 'b) (_ : 'b port) : 'a port =
-  P [%client (React.E.create ())]
-]
-
 [%%client
 
 let tag_port (f : 'a -> 'b) (push : 'b port) : 'a port =
@@ -93,4 +86,18 @@ let fpush_keyups f inp port =
                 | None -> ()
                 | exception exn -> () (* TODO: logging *)
                 | Some (v, effect) -> push ?effect port v ()))
+]
+
+
+[%%server
+let port x : _ port = P x
+
+let tag_port (f : 'a -> 'b) (_ : 'b port) : 'a port =
+  P [%client (React.E.create ())]
+]
+
+[%%shared
+let onclick (port : 'a port) (action : 'a) =
+  Html.D.a_onclick [%client (push ~%port ~%action : _ -> unit)]
+  (* TODO: how to disable warning? [@@ warning "-22"] doesn't work *)
 ]
