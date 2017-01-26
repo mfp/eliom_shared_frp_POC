@@ -5,6 +5,9 @@ open Eliom_content
 open Html.D
 
 open FRP.Types
+
+module S = Eliom_shared.React.S
+module R = Html.R
 ]
 
 [%%shared
@@ -34,10 +37,10 @@ struct
   let view (port : row_action FRP.Types.port) m =
     let inp =
       Raw.input
-        ~a:[ Html.R.a_value @@
-               Eliom_shared.React.S.map [%shared fun m -> string_of_int m.v] m;
-             Html.R.a_style @@
-               Eliom_shared.React.S.map
+        ~a:[ R.a_value @@
+               S.map [%shared fun m -> string_of_int m.v] m;
+             R.a_style @@
+               S.map
                  [%shared
                     function
                       | { row_valid = true; _ } -> ""
@@ -110,10 +113,10 @@ struct
   let view (port : test_action FRP.Types.port) m =
     let input_a =
       Raw.input
-        ~a:[ Html.R.a_value @@
-               Eliom_shared.React.S.map [%shared (fun m -> string_of_int m.a)] m;
-             Html.R.a_style @@
-               Eliom_shared.React.S.map
+        ~a:[ R.a_value @@
+               S.map [%shared (fun m -> string_of_int m.a)] m;
+             R.a_style @@
+               S.map
                  [%shared
                    function
                      | { valid = false } -> "border: 2px solid red"
@@ -127,22 +130,20 @@ struct
 
     let input_b =
       Raw.input
-        ~a:[ Html.R.a_value @@
-             Eliom_shared.React.S.map
+        ~a:[ R.a_value @@
+             S.map
                [%shared (fun m -> string_of_int @@ 2 * m.a)] m
         ]
         () in
 
     let rows =
-      Html.R.div @@
+      R.div @@
       Eliom_shared.ReactiveData.RList.from_signal @@
-      Eliom_shared.React.S.map
-        [%shared fun rows -> List.rev @@ IM.fold (fun _ v l -> v :: l) rows []] @@
-      Eliom_shared.React.S.switch @@
-      Eliom_shared.React.S.map
-        [%shared fun m -> IM.React.map ~eq:(FRP.shared_eq ()) (mk_row_view ~%port) m] @@
-      Eliom_shared.React.S.const @@
-      Eliom_shared.React.S.map ~eq:[%shared (==)] [%shared fun m -> m.rows] m
+      S.map [%shared fun rows -> List.rev @@ IM.fold (fun _ v l -> v :: l) rows []] @@
+      S.switch @@
+      S.map [%shared fun m -> IM.React.map ~eq:(FRP.shared_eq ()) (mk_row_view ~%port) m] @@
+      S.const @@
+      S.map ~eq:[%shared (==)] [%shared fun m -> m.rows] m
 
     in
 
@@ -151,8 +152,8 @@ struct
           input_a; br ();
           input_b; br ();
 
-          Html.R.pcdata @@
-            Eliom_shared.React.S.map [%shared (fun m -> Printf.sprintf "value: %d" m.a)] m;
+          R.pcdata @@
+            S.map [%shared (fun m -> Printf.sprintf "value: %d" m.a)] m;
 
           br ();
 
@@ -181,9 +182,9 @@ struct
             [ pcdata "ADD ROW" ];
           pcdata " ";
           pcdata "SUM: ";
-          Html.R.pcdata @@
-            Eliom_shared.React.S.map [%shared string_of_int] @@
-            Eliom_shared.React.S.map
+          R.pcdata @@
+            S.map [%shared string_of_int] @@
+            S.map
               [%shared fun m -> IM.fold (fun _ { v; _ } s -> v + s) m.rows 0] m;
 
           hr ();
@@ -214,7 +215,7 @@ let () =
     Html.F.(body [
       h1 [pcdata "Welcome from Eliom's distillery!"];
       div [
-        let m, pm = (Eliom_shared.React.S.create @@ TEST.make 42) in
+        let m, pm = (S.create @@ TEST.make 42) in
         let ev    = [%client (React.E.create () : test_action FRP.Types.action_event)] in
           ignore [%client ( FRP.run (*~pp_action:show_test_action *)
                               TEST.update (~%m, ~%pm) ~%ev : unit) ];
