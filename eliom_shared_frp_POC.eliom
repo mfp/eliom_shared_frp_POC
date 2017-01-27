@@ -197,11 +197,5 @@ let () =
     ~css:[["css";"eliom_shared_frp_POC.css"]]
     Eliom_content.Html.F.(body [
       h1 [pcdata "Welcome from Eliom's distillery!"];
-      div [
-        let m, pm = (S.create @@ TEST.make 42) in
-        let ev    = [%client (React.E.create () : test_action FRP.Types.action_event)] in
-          ignore [%client ( FRP.run (*~pp_action:show_test_action *)
-                              TEST.update (~%m, ~%pm) ~%ev : unit) ];
-          TEST.view (FRP.port ev) m
-      ]
+      div [ FRP.make [%client TEST.update] TEST.view (TEST.make 42) ]
     ])

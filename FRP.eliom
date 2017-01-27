@@ -96,6 +96,15 @@ let tag_port (f : 'a -> 'b) (_ : 'b port) : 'a port =
   P [%client (React.E.create ())]
 ]
 
+let make
+    (update : ('a -> 'b -> 'a) Eliom_client_value.t)
+    (view : 'b port -> 'a Eliom_shared.React.S.t -> 'c) (m0 : 'a) =
+  let m, pm = Eliom_shared.React.S.create m0 in
+  let ev    = [%client (React.E.create () : _ action_event)] in
+    ignore [%client ( run ~%update (~%m, ~%pm) ~%ev : unit) ];
+    view (port ev) m
+[@@ warning "-22"]
+
 [%%shared
 let onclick (port : 'a port) (action : 'a) =
   Html.D.a_onclick [%client (push ~%port ~%action : _ -> unit)]
