@@ -31,7 +31,8 @@ let tag_port (f : 'a -> 'b) (push : 'b port) : 'a port =
   in
     P (ev, push)
 
-let run ?pp_action update (m, (pm : ?step:React.step -> 'a -> unit)) (ev, _) : unit =
+let run ?pp_action
+    update (m, (pm : ?step:React.step -> 'a -> unit)) ((ev, _) as port) : unit =
   ignore @@
     Eliom_shared.React.E.map
       (fun (action, effect) ->
@@ -41,7 +42,7 @@ let run ?pp_action update (m, (pm : ?step:React.step -> 'a -> unit)) (ev, _) : u
          end;
          begin match action with
            | None -> ()
-           | Some action -> pm @@ update (Eliom_shared.React.S.value m) action
+           | Some action -> pm @@ update (P port) (Eliom_shared.React.S.value m) action
          end;
          begin match effect with
            | None -> ()
@@ -97,7 +98,7 @@ let tag_port (f : 'a -> 'b) (_ : 'b port) : 'a port =
 ]
 
 let make
-    (update : ('a -> 'b -> 'a) Eliom_client_value.t)
+    (update : ('b port -> ('a -> 'b -> 'a)) Eliom_client_value.t)
     (view : 'b port -> 'a Eliom_shared.React.S.t -> 'c) (m0 : 'a) =
   let m, pm = Eliom_shared.React.S.create m0 in
   let ev    = [%client (React.E.create () : _ action_event)] in
@@ -106,7 +107,8 @@ let make
 [@@ warning "-22"]
 
 [%%shared
-let onclick (port : 'a port) (action : 'a) =
-  Html.D.a_onclick [%client (push ~%port ~%action : _ -> unit)]
+let onclick (port : 'a port) ?effect (action : 'a) =
+  Html.D.a_onclick
+    [%client (push ?effect:~%effect ~%port ~%action : _ -> unit)]
   (* TODO: how to disable warning? [@@ warning "-22"] doesn't work *)
 ]

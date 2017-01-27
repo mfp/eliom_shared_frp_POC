@@ -20,7 +20,7 @@ module ROW =
 struct
   let create v = { v; row_valid = true }
 
-  let update m action =
+  let update (port : row_action FRP.port) m action =
     match action with
     | Set v -> { v; row_valid = true; }
     | Invalid -> { m with row_valid = false; }
@@ -54,10 +54,12 @@ end
 module IM = ReactMap.Make(struct type t = int let compare = compare end)
 
 type test_model =
-    { a      : int;
-      valid  : bool;
-      row_id : int;
-      rows   : row_model IM.t;
+    { a          : int;
+      valid      : bool;
+      row_id     : int;
+      rows       : row_model IM.t;
+      submitting : bool;
+      result     : string option;
     }
 
 type test_action =
@@ -68,10 +70,16 @@ type test_action =
   | Decrement
   | Add_row
   | Row_action of int * row_action
+  | Submit
+  | Submit_result of string
   (* [@@deriving show] *)
 ]
 
+let do_stuff x = Lwt_unix.sleep 2. >> Lwt.return (x ^ "++" ^ x)
+
 [%%shared
+
+let dummy_serv = ~%(Eliom_client.server_function [%derive.json: string] do_stuff)
 
 let mk_row_view port =
   [%shared fun id row ->
@@ -83,9 +91,10 @@ struct
   let make a =
     { a; valid = true; row_id = 1;
       rows = IM.add 0 (ROW.create 111) IM.empty;
+      submitting = false; result = None;
     }
 
-  let update m = function
+  let update (port : test_action FRP.port) m = function
     | Set a -> { m with a; valid = true; }
     | Increment -> { m with a = m.a + 1 }
     | Decrement -> { m with a = m.a - 1 }
@@ -103,8 +112,24 @@ struct
     | Row_action (id, action) -> begin
         match IM.find id m.rows with
           | exception Not_found -> m
-          | row -> { m with rows = IM.add id (ROW.update row action) m.rows }
+          | row ->
+            let row =
+              ROW.update
+                (FRP.tag_port (fun a -> Row_action (id, a)) port)
+                row action
+            in
+                { m with rows = IM.add id row m.rows }
       end
+    | Submit ->
+        let sum = sprintf "%d" @@ IM.fold (fun _ { v; _ } s -> v + s) m.rows 0 in
+          ignore [%client (
+            let%lwt x = ~%dummy_serv ~%sum in
+              FRP.push ~%port (Submit_result x) ();
+              Lwt.return_unit
+            : unit Lwt.t)
+          ];
+          { m with submitting = true }
+    | Submit_result result -> { m with submitting = false; result = Some result }
 
   let view (port : test_action FRP.Types.port) m =
     let open Eliom_content.Html.D in
@@ -169,6 +194,25 @@ struct
           R.pcdata @@
             S.map [%shared string_of_int] @@
             S.map [%shared fun m -> IM.fold (fun _ { v; _ } s -> v + s) m.rows 0] m;
+
+          br ();
+          button
+            ~a:[FRP.onclick port Submit;
+                R.filter_attrib (a_disabled ()) @@
+                S.map [%shared fun m -> m.submitting] m
+               ]
+            [ pcdata "SUBMIT" ];
+          R.pcdata @@
+            S.map
+              [%shared function | { submitting = true; _ } -> " SUBMITTING" | _ -> ""]
+              m;
+          R.pcdata @@
+            S.map
+              [%shared
+                function
+                  | { result = None; _ } -> ""
+                  | { result = Some s; _ } -> sprintf " result: %s" s]
+              m;
 
           hr ();
 
